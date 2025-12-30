@@ -16,7 +16,7 @@ void TextBlock::render(const GfxRenderer& renderer, const int fontId, const int 
   auto wordXposIt = wordXpos.begin();
 
   for (size_t i = 0; i < words.size(); i++) {
-    renderer.drawText(fontId, *wordXposIt + x, y, wordIt->c_str(), true, *wordStylesIt);
+    renderer.drawText(fontId, *wordXposIt + x, y, wordIt->c_str(), true, *wordStylesIt, letterSpacing);
 
     std::advance(wordIt, 1);
     std::advance(wordStylesIt, 1);
@@ -40,6 +40,9 @@ bool TextBlock::serialize(File& file) const {
   // Block style
   serialization::writePod(file, style);
 
+  // Letter spacing
+  serialization::writePod(file, letterSpacing);
+
   return true;
 }
 
@@ -49,6 +52,7 @@ std::unique_ptr<TextBlock> TextBlock::deserialize(File& file) {
   std::list<uint16_t> wordXpos;
   std::list<EpdFontStyle> wordStyles;
   BLOCK_STYLE style;
+  int8_t letterSpacing = 0;
 
   // Word count
   serialization::readPod(file, wc);
@@ -70,5 +74,11 @@ std::unique_ptr<TextBlock> TextBlock::deserialize(File& file) {
   // Block style
   serialization::readPod(file, style);
 
-  return std::unique_ptr<TextBlock>(new TextBlock(std::move(words), std::move(wordXpos), std::move(wordStyles), style));
+  // Letter spacing (with backward compatibility)
+  if (file.available()) {
+    serialization::readPod(file, letterSpacing);
+  }
+
+  return std::unique_ptr<TextBlock>(
+      new TextBlock(std::move(words), std::move(wordXpos), std::move(wordStyles), style, letterSpacing));
 }

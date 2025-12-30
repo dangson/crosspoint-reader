@@ -84,7 +84,7 @@ void GfxRenderer::drawCenteredText(const int fontId, const int y, const char* te
 }
 
 void GfxRenderer::drawText(const int fontId, const int x, const int y, const char* text, const bool black,
-                           const EpdFontStyle style) const {
+                           const EpdFontStyle style, const int8_t letterSpacing) const {
   const int yPos = y + getFontAscenderSize(fontId);
   int xpos = x;
 
@@ -106,7 +106,7 @@ void GfxRenderer::drawText(const int fontId, const int x, const int y, const cha
 
   uint32_t cp;
   while ((cp = utf8NextCodepoint(reinterpret_cast<const uint8_t**>(&text)))) {
-    renderChar(font, cp, &xpos, &yPos, black, style);
+    renderChar(font, cp, &xpos, &yPos, black, style, letterSpacing);
   }
 }
 
@@ -436,7 +436,7 @@ void GfxRenderer::cleanupGrayscaleWithFrameBuffer() const {
 }
 
 void GfxRenderer::renderChar(const EpdFontFamily& fontFamily, const uint32_t cp, int* x, const int* y,
-                             const bool pixelState, const EpdFontStyle style) const {
+                             const bool pixelState, const EpdFontStyle style, const int8_t letterSpacing) const {
   const EpdGlyph* glyph = fontFamily.getGlyph(cp, style);
   if (!glyph) {
     // TODO: Replace with fallback glyph property?
@@ -496,7 +496,7 @@ void GfxRenderer::renderChar(const EpdFontFamily& fontFamily, const uint32_t cp,
     }
   }
 
-  *x += glyph->advanceX;
+  *x += glyph->advanceX + letterSpacing;
 }
 
 void GfxRenderer::getOrientedViewableTRBL(int* outTop, int* outRight, int* outBottom, int* outLeft) const {

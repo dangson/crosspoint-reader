@@ -158,9 +158,45 @@ void ParsedText::extractLine(const size_t breakIndex, const int pageWidth, const
 
   int spacing = spaceWidth;
   const bool isLastLine = breakIndex == lineBreakIndices.size() - 1;
+  int8_t letterSpacing = 0;
 
   if (style == TextBlock::JUSTIFIED && !isLastLine && lineWordCount >= 2) {
     spacing = spareSpace / (lineWordCount - 1);
+
+    // Apply letter spacing compression if word spacing is excessive
+    // Threshold: word spacing > 1.5x normal space width
+    const int excessiveSpacingThreshold = spaceWidth + spaceWidth / 2;
+
+    if (spacing > excessiveSpacingThreshold) {
+      // Count total characters in the line to calculate letter spacing adjustment
+      size_t totalChars = 0;
+      auto wordIt = words.begin();
+      for (size_t i = 0; i < lineWordCount; i++) {
+        // Count UTF-8 characters in the word
+        const char* str = wordIt->c_str();
+        while (*str) {
+          if ((*str & 0xC0) != 0x80) totalChars++;  // Count UTF-8 leading bytes
+          str++;
+        }
+        std::advance(wordIt, 1);
+      }
+
+      // Apply letter spacing compression (max 10% of average char width ~= 1px for typical fonts)
+      // Goal: reduce word spacing to be closer to 1.25x normal
+      const int targetSpacing = spaceWidth + spaceWidth / 4;
+      const int spacingReduction = spacing - targetSpacing;
+
+      if (totalChars > 0 && spacingReduction > 0) {
+        // Calculate how much we can compress per character (limit to -2px max)
+        const int maxCompressionPerChar = 2;
+        letterSpacing = -std::min(maxCompressionPerChar, spacingReduction / static_cast<int>(totalChars));
+
+        // Recalculate spacing with the space saved from letter compression
+        const int savedSpace = -letterSpacing * totalChars;
+        const int adjustedSpareSpace = spareSpace - savedSpace;
+        spacing = adjustedSpareSpace / (lineWordCount - 1);
+      }
+    }
   }
 
   // Calculate initial x position
@@ -191,5 +227,6 @@ void ParsedText::extractLine(const size_t breakIndex, const int pageWidth, const
   std::list<EpdFontStyle> lineWordStyles;
   lineWordStyles.splice(lineWordStyles.begin(), wordStyles, wordStyles.begin(), wordStyleEndIt);
 
-  processLine(std::make_shared<TextBlock>(std::move(lineWords), std::move(lineXPos), std::move(lineWordStyles), style));
+  processLine(
+      std::make_shared<TextBlock>(std::move(lineWords), std::move(lineXPos), std::move(lineWordStyles), style, letterSpacing));
 }

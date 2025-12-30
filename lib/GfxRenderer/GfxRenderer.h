@@ -32,7 +32,7 @@ class GfxRenderer {
   uint8_t* bwBufferChunks[BW_BUFFER_NUM_CHUNKS] = {nullptr};
   std::map<int, EpdFontFamily> fontMap;
   void renderChar(const EpdFontFamily& fontFamily, uint32_t cp, int* x, const int* y, bool pixelState,
-                  EpdFontStyle style) const;
+                  EpdFontStyle style, int8_t letterSpacing = 0) const;
   void freeBwBufferChunks();
   void rotateCoordinates(int x, int y, int* rotatedX, int* rotatedY) const;
 
@@ -72,7 +72,8 @@ class GfxRenderer {
   // Text
   int getTextWidth(int fontId, const char* text, EpdFontStyle style = REGULAR) const;
   void drawCenteredText(int fontId, int y, const char* text, bool black = true, EpdFontStyle style = REGULAR) const;
-  void drawText(int fontId, int x, int y, const char* text, bool black = true, EpdFontStyle style = REGULAR) const;
+  void drawText(int fontId, int x, int y, const char* text, bool black = true, EpdFontStyle style = REGULAR,
+                int8_t letterSpacing = 0) const;
   int getSpaceWidth(int fontId) const;
   int getFontAscenderSize(int fontId) const;
   int getLineHeight(int fontId) const;
